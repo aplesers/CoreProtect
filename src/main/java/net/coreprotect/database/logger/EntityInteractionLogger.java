@@ -34,9 +34,9 @@ public final class EntityInteractionLogger {
         return event.isCancelled() ? null : new LogContext(event);
     }
 
-    public static void log(ConsumerWriteBatch batch, EntitySpawnIdentity identity, EntityInteraction interaction, LogContext context) throws Exception {
+    public static boolean log(ConsumerWriteBatch batch, EntitySpawnIdentity identity, EntityInteraction interaction, LogContext context) throws Exception {
         Location currentLocation = interaction.getCurrentLocation();
-        EntityInteractionStatement.checkpoint(batch, identity, currentLocation);
+        boolean identityActive = EntityInteractionStatement.checkpoint(batch, identity, currentLocation);
 
         int worldId = identity.getOriginalWorldId();
         int x = identity.getOriginalX();
@@ -44,8 +44,8 @@ public final class EntityInteractionLogger {
         int z = identity.getOriginalZ();
 
         int userId = UserStatement.getId(batch, context.event.getUser(), true);
-        int time = (int) (System.currentTimeMillis() / 1000L);
-        EntityInteractionStatement.insert(batch, time, userId, identity, worldId, x, y, z, interaction);
+        EntityInteractionStatement.insert(batch, interaction.getTime(), userId, identity, worldId, x, y, z, interaction);
+        return identityActive;
     }
 
     public static final class LogContext {
